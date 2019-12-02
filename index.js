@@ -59,8 +59,14 @@ class Bot {
         })
     }
     set(id, regex, code, flag = '') {
+        if (typeof (regex) !== 'string') {
+            var m = /\/(.*)\/(.*)/.exec(regex.toString())
+            if (!m) return
+            regex = m[1]
+            flag = m[2]
+        }
         if (typeof (code) === "function")
-            code = code.toString().match(/^\(.*?\) *=> *{?(.*?)}? *$/s)[1];
+            code = code.toString().match(/^(?:\(.*?\) *=>|function.*?\(.*?\)) *{?[ \n\r]*(.*?)[ \n\r]*}?$/s)[1];
         handler[id] = { regex, flag, code };
         this.save()
     }
