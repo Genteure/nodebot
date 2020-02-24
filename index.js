@@ -1,12 +1,52 @@
 const { CQWebSocket } = require('cq-websocket');
 const fs = require('fs');
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
+
 const noderegex = /^\+node(?:\n|\r)*(.+)$/s;
 const ws = new CQWebSocket({
-    accessToken: 0,
-    host: 0,
+    accessToken: "0",
+    host: "0",
     port: 0,
     qq: 0
 });
+
+// ---------------
+// 推送通知
+
+app.post('/a', function (req, res) {
+    if (false && req.body.key === "a") {
+        ws('send_msg', {
+            group_id: a,
+            message: (req.body.notetitle || "<无标题>") + "\n" + (req.body.message || "<无正文>")
+        })
+        res.send('')
+    } else {
+        res.send('key')
+    }
+})
+
+app.post('/b', function (req, res) {
+    if (req.body.key === "a") {
+        ws('send_msg', {
+            group_id: a,
+            message: "\n" + (req.body.message || "<无正文>")
+        })
+        res.send('ok\n')
+    } else {
+        res.send('key\n')
+    }
+})
+
+app.listen(port);
+
+// ---------------
+// nodebot QQ 机器人
 
 var handler = {};
 var state = {};
@@ -31,25 +71,31 @@ class Bot {
             require('process').exit(1)
         }
     }
-    screenshot(url, wait, callback) {
-        if (typeof (wait) === 'function')
-            callback = wait;
-        if (typeof (wait) !== 'number')
-            wait = 0
-
+    screenshot(args) {
         require('puppeteer').launch({
             defaultViewport: {
                 width: 1852,
                 height: 976
-            }
+            },
+            args: args.proxy ? ['--proxy-server='] : []
         }).then(async b => {
             try {
                 const page = await b.newPage();
-                await page.goto(url, { waitUntil: 'networkidle0' })
-                await page.waitFor(wait);
-                const image = await page.screenshot({ fullPage: true, encoding: 'base64' })
-                if (callback)
-                    callback(image)
+                page.setDefaultNavigationTimeout(60 * 1000)
+                await page.goto(args.url, { waitUntil: 'networkidle2' })
+                await page.waitFor(args.wait || 0);
+                let image;
+                if (args.selector) {
+                    const dom = await page.$(args.selector)
+                    if (dom)
+                        image = await dom.screenshot({ encoding: 'base64' })
+                    else
+                        throw '未找到请求截图的 DOM'
+                }
+                else {
+                    image = await page.screenshot({ fullPage: true, encoding: 'base64' })
+                } if (args.callback)
+                    args.callback(image)
                 else
                     this.log(`[CQ:image,file=base64://${image}]`)
             } catch (e) {
@@ -69,6 +115,7 @@ class Bot {
             code = code.toString().match(/^(?:\(.*?\) *=>|function.*?\(.*?\)) *{?[ \n\r]*(.*?)[ \n\r]*}?$/s)[1];
         handler[id] = { regex, flag, code };
         this.save()
+        // this.log('[CQ:image,file=]')
     }
     unset(id) {
         delete handler[id]
