@@ -7,7 +7,34 @@ QQ机器人 之 nodebot
 ## 正确玩法 👍
 在装配有此bot的QQ群内发送以下消息即可获得B站视频信息解析功能一份
 
-![nodebot](nodebot.png)
+BV 号版：
+
+```js
++node
+bot.set('bv', '(BV1[fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF]{9})', () => {
+    (async () => {
+        try {
+            const bvid = match[1]
+            const resp = await require('got')('https://api.bilibili.com/x/web-interface/view?bvid=' + bvid, {
+                json: true
+            });
+            const data = resp.body;
+            if (data.code === 0) {
+                const pubdate = new Date(data.data.pubdate * 1000)
+                bot.log(`[CQ:image,file=${data.data.pic}]\n${data.data.title}\n${data.data.owner.name} ${data.data.tname}\n发布时间 ${pubdate.getFullYear()}年${pubdate.getMonth()+1}月${pubdate.getDate()}日 ${pubdate.getHours()}:${pubdate.getMinutes()}:${pubdate.getSeconds()}\n播放${data.data.stat.view} 投币${data.data.stat.coin} 弹幕${data.data.stat.danmaku}\n收藏${data.data.stat.favorite} 评论${data.data.stat.reply} 分享${data.data.stat.share}\nhttps://www.bilibili.com/video/${bvid}`)
+            } else {
+                console.log(data)
+            }
+        } catch (e) {
+            console.log(e)
+        }
+    })();
+})
+```
+
+![nodebot](nodebot2.png)
+
+av 号版：
 
 ```js
 +node
@@ -31,9 +58,9 @@ bot.set('av', '[aA][vV](\\d+)', () => {
     })();
 })
 ```
+![nodebot](nodebot.png)
 
-### 注
-请自行在QQ群内发送以下消息安装本功能依赖
+注：请自行在QQ群内发送以下消息安装本功能依赖
 ```js
 +node
 require('child_process').exec('npm i got')
